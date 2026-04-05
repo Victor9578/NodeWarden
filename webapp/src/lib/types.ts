@@ -1,4 +1,4 @@
-export type AppPhase = 'loading' | 'register' | 'login' | 'locked' | 'app';
+export type AppPhase = 'register' | 'login' | 'locked' | 'app';
 
 export interface SessionState {
   accessToken: string;
@@ -13,6 +13,9 @@ export interface Profile {
   email: string;
   name: string;
   key: string;
+  masterPasswordHint?: string | null;
+  privateKey?: string | null;
+  publicKey?: string | null;
   role: 'admin' | 'user';
   [k: string]: unknown;
 }
@@ -25,7 +28,13 @@ export interface Folder {
 
 export interface CipherLoginUri {
   uri?: string | null;
+  match?: number | null;
   decUri?: string;
+}
+
+export interface VaultDraftLoginUri {
+  uri: string;
+  match: number | null;
 }
 
 export interface CipherAttachment {
@@ -39,17 +48,11 @@ export interface CipherAttachment {
   object?: string;
 }
 
-export interface CipherLoginPasskey {
-  creationDate?: string | null;
-  [key: string]: unknown;
-}
-
 export interface CipherLogin {
   username?: string | null;
   password?: string | null;
   totp?: string | null;
   uris?: CipherLoginUri[] | null;
-  fido2Credentials?: CipherLoginPasskey[] | null;
   decUsername?: string;
   decPassword?: string;
   decTotp?: string;
@@ -140,6 +143,7 @@ export interface Cipher {
   creationDate?: string;
   revisionDate?: string;
   deletedDate?: string | null;
+  archivedDate?: string | null;
   attachments?: CipherAttachment[] | null;
   login?: CipherLogin | null;
   card?: CipherCard | null;
@@ -217,8 +221,7 @@ export interface VaultDraft {
   loginUsername: string;
   loginPassword: string;
   loginTotp: string;
-  loginUris: string[];
-  loginFido2Credentials: Array<Record<string, unknown>>;
+  loginUris: VaultDraftLoginUri[];
   cardholderName: string;
   cardNumber: string;
   cardBrand: string;
@@ -254,11 +257,7 @@ export interface ListResponse<T> {
   data: T[];
 }
 
-export interface SetupStatusResponse {
-  registered: boolean;
-}
-
-export interface WebConfigResponse {
+export interface WebBootstrapResponse {
   defaultKdfIterations?: number;
   jwtUnsafeReason?: 'missing' | 'default' | 'too_short' | null;
   jwtSecretMinLength?: number;
@@ -267,7 +266,27 @@ export interface WebConfigResponse {
 export interface TokenSuccess {
   access_token: string;
   refresh_token: string;
+  expires_in?: number;
+  token_type?: string;
   TwoFactorToken?: string;
+  Key?: string;
+  PrivateKey?: string | null;
+  AccountKeys?: unknown | null;
+  accountKeys?: unknown | null;
+  Kdf?: number;
+  KdfIterations?: number;
+  KdfMemory?: number | null;
+  KdfParallelism?: number | null;
+  ForcePasswordReset?: boolean;
+  ResetMasterPassword?: boolean;
+  scope?: string;
+  unofficialServer?: boolean;
+  UserDecryptionOptions?: unknown;
+  userDecryptionOptions?: unknown;
+  VaultKeys?: {
+    symEncKey?: string;
+    symMacKey?: string;
+  };
 }
 
 export interface TokenError {

@@ -1,7 +1,7 @@
 import { argon2idAsync } from '@noble/hashes/argon2.js';
 import { strToU8, zipSync } from 'fflate';
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader, ZipWriter, configure as configureZipJs } from '@zip.js/zip.js';
-import type { PreloginKdfConfig } from './api';
+import type { PreloginKdfConfig } from './api/auth';
 import { base64ToBytes, bytesToBase64, decryptBw, decryptStr, encryptBw, hkdfExpand, pbkdf2 } from './crypto';
 import type { Cipher, Folder } from './types';
 
@@ -112,10 +112,6 @@ function randomGuid(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-function toAesBuffer(bytes: Uint8Array): ArrayBuffer {
-  return new Uint8Array(bytes).buffer;
-}
-
 async function getCipherKeyParts(cipher: Cipher, userEnc: Uint8Array, userMac: Uint8Array): Promise<{ enc: Uint8Array; mac: Uint8Array }> {
   if (cipher.key && typeof cipher.key === 'string') {
     try {
@@ -202,7 +198,6 @@ function mapCipherEncrypted(cipher: Cipher): Record<string, unknown> {
               match: (uri as { match?: unknown })?.match ?? null,
             }))
           : [],
-        fido2Credentials: Array.isArray(login.fido2Credentials) ? cloneValue(login.fido2Credentials) : [],
       }
     : null;
 
@@ -295,9 +290,6 @@ async function mapCipherPlain(cipher: Cipher, userEnc: Uint8Array, userMac: Uint
               match: (uri as { match?: unknown })?.match ?? null,
             }))
           )
-        : [],
-      fido2Credentials: Array.isArray(cipher.login.fido2Credentials)
-        ? await Promise.all(cipher.login.fido2Credentials.map((credential) => deepDecryptUnknown(credential, keyParts.enc, keyParts.mac)))
         : [],
     };
   } else {
@@ -432,7 +424,7 @@ export async function buildBitwardenCsvString(args: BuildPlainJsonArgs): Promise
       ? (login.uris as Array<Record<string, unknown>>)
           .map((uri) => normalizeString(uri.uri) || '')
           .filter((uri) => !!uri)
-          .join(',')
+          .join('\n')
       : '';
 
     rows.push([
